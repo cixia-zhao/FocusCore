@@ -515,9 +515,24 @@ static void render_file_browser_list(void)
 
         const char *text_to_show = "?";
         if (cJSON_IsArray(current_parent)) {
-            cJSON *title_node = cJSON_GetObjectItem(child, "title");
-            if (title_node && title_node->valuestring) {
-                text_to_show = title_node->valuestring;
+            if(cJSON_IsObject(child)) {
+                /* Manual traversal to find "title" */
+                cJSON *title_node = NULL;
+                cJSON *key_child = child->child;
+                if(key_child) {
+                    cJSON *first_key = key_child;
+                    do {
+                        if(key_child->string && strcmp(key_child->string, "title") == 0) {
+                            title_node = key_child;
+                            break;
+                        }
+                        key_child = key_child->next;
+                    } while(key_child != first_key);
+                }
+                
+                if (title_node && title_node->valuestring) {
+                    text_to_show = title_node->valuestring;
+                }
             }
         } else {
             if (child->string && strcmp(child->string, "__DEFAULT__") != 0) {
@@ -727,17 +742,57 @@ static void InputEventTask(void *pvParameters)
                     cJSON *current_parent = s_nav_stack[s_nav_depth];
                     cJSON *selected_node = s_current_nodes[s_file_browser_idx];
                     if(selected_node == NULL) { Lvgl_unlock(); continue; }
+                    
+                    /* Check if selected_node itself is an Array - treat as directory */
+                    if(cJSON_IsArray(selected_node)) {
+                        s_nav_stack[++s_nav_depth] = selected_node;
+                        s_file_browser_idx = 0;
+                        render_file_browser_list();
+                        update_file_browser_highlight();
+                        Lvgl_unlock();
+                        continue;
+                    }
+                    
                     if(cJSON_IsArray(current_parent)) {
-                        cJSON *file_node = cJSON_GetObjectItem(selected_node, "file");
-                        if(file_node && file_node->valuestring) {
-                            char filepath[256];
-                            snprintf(filepath, sizeof(filepath), "/sdcard/_bin_output/%s", file_node->valuestring);
-                            ESP_LOGI("FILE_BROWSER", "Loading: %s", filepath);
-                            load_bin_from_sd(filepath);
-                            lv_screen_load(s_digital_garden_screen);
-                        } else {
-                            ESP_LOGE("FILE_BROWSER", "File node not found or valuestring is NULL!");
+                        /* Leaf level: extract file path with polymorphic compatibility */
+                        const char *file_path_str = NULL;
+                        
+                        if(cJSON_IsString(selected_node)) {
+                            /* Branch A: selected_node itself is a string (direct .bin path/hash) */
+                            file_path_str = selected_node->valuestring;
+                        } else if(cJSON_IsObject(selected_node)) {
+                            /* Branch B: selected_node is Object with "file" field */
+                            cJSON *file_node = cJSON_GetObjectItem(selected_node, "file");
+                            if(file_node != NULL && cJSON_IsString(file_node)) {
+                                file_path_str = file_node->valuestring;
+                            } else if(selected_node->child != NULL && selected_node->child->next == selected_node->child) {
+                                /* Branch C: Object with single child, child's value is the filename */
+                                cJSON *only_child = selected_node->child;
+                                if(cJSON_IsString(only_child)) {
+                                    file_path_str = only_child->valuestring;
+                                }
+                            }
                         }
+                        
+                        if(file_path_str == NULL) {
+                            ESP_LOGE("FILE_BROWSER", "Cannot extract file path! Node type: %d", selected_node->type);
+                            Lvgl_unlock();
+                            continue;
+                        }
+                        
+                        char filepath[256];
+                        snprintf(filepath, sizeof(filepath), "/sdcard/_bin_output/%s", file_path_str);
+                        ESP_LOGI("FILE_BROWSER", "Loading: %s", filepath);
+                        s_img_y_offset = 0;
+                        lv_screen_load(s_digital_garden_screen);
+                        if(s_loading_label == NULL) {
+                            s_loading_label = lv_label_create(s_digital_garden_screen);
+                            lv_label_set_text(s_loading_label, "Loading...");
+                            lv_obj_align(s_loading_label, LV_ALIGN_CENTER, 0, 0);
+                        }
+                        Lvgl_unlock();
+                        load_bin_from_sd(filepath);
+                        continue;
                     } else {
                         cJSON *target = selected_node;
                         while(cJSON_IsObject(target) && target->child != NULL && target->child->next == target->child) {
