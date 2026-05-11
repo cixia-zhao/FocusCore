@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 32 px
  * Bpp: 1
- * Opts: --font C:\Windows\Fonts\simhei.ttf --size 32 --bpp 1 --format lvgl --no-compress --symbols 0123456789月日 -o D:\ESP32-S3-RLCD-4.2-Demo\ESP32-S3-RLCD-4.2-Demo\02_ESP-IDF\09_LVGL_V9_Test\main\ui_font_date_large.c
+ * Opts: --font C:\Windows\Fonts\simhei.ttf --size 32 --bpp 1 --format lvgl --no-compress --symbols 0123456789月日 -o D:\ESP32-S3-RLCD-4.2-Demo\ESP32-S3-RLCD-4.2-Demo\02_ESP-IDF\FocusCore\main\ui_font_date_large.c
  ******************************************************************************/
 
 #include "lvgl.h"

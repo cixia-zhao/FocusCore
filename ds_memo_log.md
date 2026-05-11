@@ -141,7 +141,7 @@
   - 反复报错根因已确认：直接运行 `lv_font_conv` 会重写头部为 `lvgl/lvgl.h`，导致 ESP-IDF managed LVGL 找不到头文件。
   - 当前修复路径：使用 `python gen_lvgl_fonts.py` 生成字体，自动改回 `lvgl.h`。
 - **运行态观测**
-  - 串口监视器正在运行，日志显示系统可启动到应用层（ESP-IDF v6.0，项目 `09_LVGL_V9_Test`，PSRAM 初始化通过）。
+  - 串口监视器正在运行，日志显示系统可启动到应用层（ESP-IDF v6.0，项目 `FocusCore`，PSRAM 初始化通过）。
 - **外部依赖工具**
   - 已使用并可用：`lv_font_conv`、Python 运行环境（Espressif venv）。
 
