@@ -1,0 +1,21 @@
+# ESP-IDF
+build/
+sdkconfig.old
+dependencies.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+dist/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db

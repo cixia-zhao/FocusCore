@@ -1,0 +1,11 @@
+idf_component_register(
+    SRCS 
+    "display_bsp.cpp" 
+    REQUIRES
+    esp_driver_spi
+    esp_lcd
+    PRIV_REQUIRES
+    driver
+    esp_timer
+    INCLUDE_DIRS 
+    "./")
